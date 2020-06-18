@@ -1,7 +1,7 @@
 var http = require('http');
 
 var options = {
-  host: proccess.env.app_url,
+  host: process.env.app_url,
 };
 
 callback = function(response) {

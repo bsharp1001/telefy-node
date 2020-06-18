@@ -19,7 +19,7 @@ var hash = '';
 var channelpeerId = '';
 
 connection.query('SELECT * FROM keys')
-.then ( error, results, fields => {
+.then ( (error, results, fields) => {
 
   for (let index = 0; index < results.length; index++) {
     if (results[index].key == "bot_token"){
