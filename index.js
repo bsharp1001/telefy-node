@@ -8,10 +8,7 @@ var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('/data');
 
 var connection = mysql.createConnection({
-  //host     : process.env.DATABASE_URL,
-  host: "127.0.0.1",
-  user: "root",
-  database: "telegram",
+  host     : process.env.DATABASE_URL,
 });
  
 connection.connect();
