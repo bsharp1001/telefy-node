@@ -5,7 +5,10 @@ var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('./data');
 
 var connection = mysql.createConnection({
-  host     : process.env.DATABASE_URL,
+  //host     : process.env.DATABASE_URL,
+  host: "127.0.0.1",
+  user: "root",
+  database: "telegram",
 });
 
 connection.connect();
@@ -142,9 +145,10 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-connection.query('CREATE TABLE IF NOT EXISTS users (username text, email text, name text, chatid text PRIMARY KEY NOT NULL)', function (error, results, fields) {
-  connection.query('CREATE TABLE IF NOT EXISTS keys (key text PRIMARY KEY NOT NULL, value text)', function (error, results, fields) {
-    
+connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), email VARCHAR(255), name VARCHAR(255), chatid VARCHAR(255) PRIMARY KEY NOT NULL)', function (error, results, fields) {
+  console.log(error)
+  connection.query('CREATE TABLE IF NOT EXISTS tele_keys (unique_key VARCHAR(255) PRIMARY KEY NOT NULL, value LONGTEXT)', function (error, results, fields) {
+    console.log(error)
 
 rl.question("api id: ", (id) => {
   rl.close()
@@ -155,14 +159,14 @@ rl.question("api id: ", (id) => {
   });
   rl1.question("api hash: ", (hash) => {
     rl1.close()
-    values.push(["api_hash",id]);
+    values.push(["api_hash",hash]);
     const rl2 = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
     rl2.question("bot token: ", (token) => {
       rl2.close()
-      values.push(["bot_token",id]);
+      values.push(["bot_token",token]);
       const rl3 = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -193,15 +197,19 @@ rl.question("api id: ", (id) => {
             })
             .then(result => {
               values.push(["channel",result.peer.channel_id]);
+              //console.log(result.peer.channel_id);
               for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
-                const key = mtproto.customLocalStorage.key[index];
+                const key = mtproto.customLocalStorage.key(index);
                 var data =  [key, mtproto.customLocalStorage.getItem(key)];
                 //console.log(mtproto.customLocalStorage.length, data);
                 values.push(data);
               }
-              connection.query('INSERT INTO keys (key, value) VALUES ?', values, function (error, results, fields) {
-                process.exit();
+              //console.log(values);
+              for (let index = 0; index < values.length; index++) {
+              connection.query('INSERT INTO tele_keys (unique_key, value) VALUES ?', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
+                console.log(error);
               })
+            }
             })
           })
           //console.log(values);
@@ -251,14 +259,20 @@ rl.question("api id: ", (id) => {
             })
             .then(result => {
               values.push(["channel",result.peer.channel_id]);
+              console.log(result.peer.channel_id);
+              //console.log(mtproto.customLocalStorage.length);
               for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
-                const key = mtproto.customLocalStorage.key[index];
+                const key = mtproto.customLocalStorage.key(index);
+                console.log(key);
                 var data =  [key, mtproto.customLocalStorage.getItem(key)];
                 values.push(data);
               }
-              connection.query('INSERT INTO keys (key, value) VALUES ?', values, function (error, results, fields) {
-                process.exit();
-              })
+              //console.log(values)
+              for (let index = 0; index < values.length; index++) {
+                connection.query('INSERT INTO tele_keys (unique_key, value) VALUES (?,?)', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
+                  console.log(error);
+                })
+              }
             })
           })
 //console.log(`getNearestDc[result]:`, result);

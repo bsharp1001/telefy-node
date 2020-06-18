@@ -8,7 +8,10 @@ var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('/data');
 
 var connection = mysql.createConnection({
-  host     : process.env.DATABASE_URL,
+  //host     : process.env.DATABASE_URL,
+  host: "127.0.0.1",
+  user: "root",
+  database: "telegram",
 });
  
 connection.connect();
@@ -18,23 +21,28 @@ var id = '';
 var hash = '';
 var channelpeerId = '';
 
-connection.query('SELECT * FROM keys')
-.then ( (error, results, fields) => {
+connection.query('SELECT * FROM tele_keys', (error, results, fields) => {
+  //console.log(error)
+  //console.log(results)
 
   for (let index = 0; index < results.length; index++) {
-    if (results[index].key == "bot_token"){
-      token = results[index].value
+    if (results[index].unique_key == "bot_token"){
+      token = JSON.parse(results[index].value)
+      //console.log("bot",results[index].value)
     } else {
-      if (results[index].key == "api_id") {
-        api_id = results[index].value
+      if (results[index].unique_key == "api_id") {
+        id = parseInt(JSON.parse(results[index].value))
+        //console.log("id",results[index].value)
       } else {
-        if (results[index].key == "api_hash") {
-          api_hash = results[index].value
+        if (results[index].unique_key == "api_hash") {
+          hash = JSON.parse(results[index].value)
+          //console.log("hash",results[index].value)
         } else {
-          if (results[index].key == "channel") {
-            channelpeerId = results[index].value
+          if (results[index].unique_key == "channel") {
+            channelpeerId = JSON.parse(results[index].value)
+            //console.log("channel",results[index].value)
           } else {
-            localStorage.setItem(results[index].key, results[index].value)
+            localStorage.setItem(results[index].unique_key, JSON.parse(results[index].value))
           }
         }
       }
@@ -42,7 +50,7 @@ connection.query('SELECT * FROM keys')
   }  
   // Create a bot that uses 'polling' to fetch new updates
   const bot = new TelegramBot(token, {polling: true});
-  
+  //console.log("t",token,"id",id,"hsh",hash,"ch",channelpeerId)
   // Create mtproto instance
   const mtproto = new MTProto({
     api_id: id,
@@ -57,60 +65,68 @@ connection.query('SELECT * FROM keys')
        
       const chatId = msg.chat.id;
       const username = msg.chat.username;
-      connection.query('INSERT INTO users (username, chatid) VALUES(?,?) ON CONFLICT(username) DO UPDATE SET chatid=?', [username, chatId, chatId], function (error, results, fields) {
+      connection.query('INSERT INTO tele_users (username, chatid) VALUES(?,?)', [username, chatId, chatId], function (error, results, fields) {
           // error will be an Error if one occurred during the query
           // results will contain the results of the query
           // fields will contain information about the returned results fields (if any)
           
           // send back to the chat
+          console.log(error)
           resp = "Great, a new friend. Always nice to have new friend, welcome. If you care to tell me more info about you type \n /add_info";
           
           bot.sendMessage(chatId, resp);
         });
       
     });
-  
+    bot.on("polling_error", (msg) => console.log(msg));
   bot.onText(/\/add_info/, (msg, match) => {
-    
       const chatId = msg.chat.id;
-      connection.query('SELECT email, name FROM users WHERE chatid=?', [username, chatId, chatId], function (error, results, fields) {
+      connection.query('SELECT email, name FROM tele_users WHERE chatid=?', [ chatId, chatId], function (error, results, fields) {
+        console.log(error)
+        console.log(results)
         var resp = "";
         var email = "";
         var name = "";
         if (results.length < 1) {
           resp = "Looks like you signed out of the service. Please type /start agin to re-apply first and become a friend again";
-          } else {
+          bot.sendMessage(chatId, resp);
+        } else {
             email = results[0].email
             name = results[0].name
-            if (email == "" && name == "") {
+            if (email == null && name == null) {
               resp = "Perfect! it is always nice to know my friends better. Please, type your email in full valid form like this:\nname@example.com \n or if you don't want to type skip email"
+              bot.sendMessage(chatId, resp);
             } else {
-              if (email == "" && name != "") {
-                resp = "Seems like You added your name but not your email. Please, type your email in full valid form like this:\nname@example.com or if you don't want to type skip email"
+              if (email == null && name != null) {
+                resp = "Seems like You added your name but not your email. Please, type your email in full valid form like this:\nname@example.com\n or if you don't want to type skip email"
+                bot.sendMessage(chatId, resp);
               } else {
-                if (email != "" && name == "") {
-                  resp = "Seems like You added your name but not your email. Please, type your name or if you don't want to type skip name"
+                if (email != null && name == null) {
+                  resp = "Seems like You added your email but not your name. Please, type your name like this: \n name: joe smith\n or if you don't want to type skip name"
+                  bot.sendMessage(chatId, resp);
                 } else {
-                  if (email != "" && name != "") {
-                    resp = "Seems like You added your name but not your email. To update your info, start with your email... Please, type your email in full valid form like this:\nname@example.com or if you don't want to type skip email"
+                  if (email != null && name != null) {
+                    resp = "Seems like You already registered. To update your info, start with your email... Please, type your email in full valid form like this:\nname@example.com\n or if you don't want to type skip email"
+                    bot.sendMessage(chatId, resp);
                   }
                 }
               }
             }
           }
-          bot.sendMessage(chatId, resp);
+          
       });
   });
   
+  //email regex
   bot.onText(/(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)/, (msg, match) => {
     const chatId = msg.chat.id;
     const email = msg.text;
-    connection.query('UPDATE users SET email=? WHERE chatid=?', [email, chatId], function (error, results, fields) {
-      bot.sendMessage(chatId, "Okay, your email is added. Now type your name like this: \n name: joe smith");
+    connection.query('UPDATE tele_users SET email=? WHERE chatid=?', [email, chatId], function (error, results, fields) {
+      bot.sendMessage(chatId, "Okay, your email is added. Now type your name like this: \n name: joe smith\n or if you don't want to type skip name");
     })
   });
   
-  bot.onText(/.*skip(.+)/, (msg, match) => {
+  bot.onText(/.*skip(.+)/i, (msg, match) => {
     
     const chatId = msg.chat.id;
     if (match[1].trim().indexOf("email") != -1){
@@ -122,12 +138,13 @@ connection.query('SELECT * FROM keys')
     }
 
   });
-  
-  bot.onText(/.*name:(.+)/, (msg, match) => {
+
+  //name regex
+  bot.onText(/.*name:(.+)/i, (msg, match) => {
     
     const chatId = msg.chat.id;
     const name = match[1];
-    connection.query('UPDATE users SET name=? WHERE chatid=?', [name, chatId], function (error, results, fields) {
+    connection.query('UPDATE tele_users SET name=? WHERE chatid=?', [name, chatId], function (error, results, fields) {
       bot.sendMessage(chatId, "Okay, we're all set");
     })  
 });
@@ -136,23 +153,41 @@ connection.query('SELECT * FROM keys')
     
       const chatId = msg.chat.id;
       bot.sendMessage(chatId, "Goodbyes hve always been hard \uD83E\uDD7A As you wish, you will stop receiving notifications from me");
-      connection.query('DELETE FROM users WHERE chatid=?', [chatId], function (error, results, fields) {
+      connection.query('DELETE FROM tele_users WHERE chatid=?', [chatId], function (error, results, fields) {
       })
   });
-  
-  mtproto.updates.on('updateShort', message => {
-      const { update } = message;
-     
-      if (update._ === 'updateNewMessage') {
-        const { mes, pts, pts_count } = update;
-        if (mes.to_id.peerChannel.channel_id === channelpeerId){
-          console.log(mes.text);
-          connection.query('SELECT chatid FROM users', [username, chatId, chatId], function (error, results, fields) {
-            for (let index = 0; index < results.length; index++) {
-              bot.sendMessage(results[index], mes.message);
-            }
-          })
+
+
+  //neccessary to start receiving updates
+  mtproto.call("updates.getState"). then(result => {
+    console.log(result);
+  }). catch ( error => {
+    console.log(error);
+  })
+
+
+  //handle updates
+  mtproto.updates.on('updates', message => {
+      //console.log(message);
+      const updates = message.updates;
+      console.log(updates.length);
+      for (let index = 0; index < updates.length; index++) {
+        const update = updates[index];
+        if (update._ === 'updateNewChannelMessage') {
+          const mes = update.message;
+          console.log(mes);
+          console.log(mes.message);
+          if (mes.to_id.channel_id === channelpeerId){
+            connection.query('SELECT chatid FROM tele_users', function (error, results, fields) {
+              console.log(error)
+              console.log(results)
+              for (let index = 0; index < results.length; index++) {
+                bot.sendMessage(results[index].chatid, mes.message);
+              }
+            })
+          }
         }
       }
+      
   });
 });

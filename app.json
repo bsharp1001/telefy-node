@@ -1,0 +1,18 @@
+{
+  "name": "Telefy",
+  "description": "Notifiction grabber-sender model utilizing native Telegram API for both bots and users",
+  "repository": "https://github.com/bsharp1001/telefy-node",
+  "env": {
+    "app_url": {
+      "value": "your_url_app"
+    }
+  },
+  "addons": [
+    {
+      "plan": "cleardb:ignite"
+    },
+    {
+      "plan": "scheduler"
+    }
+  ]
+}
