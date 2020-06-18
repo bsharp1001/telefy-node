@@ -1,0 +1,21 @@
+{
+  "engines": {
+    "node": "v14.4.0"
+  },
+  "name": "telegram-notifier",
+  "version": "1.0.0",
+  "description": "telegram notifier",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mtproto/core": "3.2.0",
+    "mysql": "2.18.1",
+    "node-localstorage": "2.1.6",
+    "node-telegram-bot-api": "^0.50.0",
+    "utf8": "3.0.0"
+  }
+}
