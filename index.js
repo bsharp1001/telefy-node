@@ -3,6 +3,12 @@ const TelegramBot = require('node-telegram-bot-api');
 const { MTProto } = require('@mtproto/core');
 const storage = require('@mtproto/core/src/storage')
 const utf8 = require('utf8');
+const http = require("http");
+
+http.createServer(function (req, res) {
+  res.write('Hello World!'); //write a response to the client
+  res.end(); //end the response
+}).listen(8080)
 
 var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('/data');
