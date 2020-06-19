@@ -4,10 +4,10 @@ const mysql = require('mysql');
 var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('./data');
 
-var connection = mysql.createConnection({
-  host     : process.env.DATABASE_URL
-});
-
+//var connection = mysql.createConnection({
+//  host     : process.env.DATABASE_URL
+//});
+var connection = mysql.createConnection(process.env.DATABASE_URL);
 connection.connect();
 var values = [];
 
