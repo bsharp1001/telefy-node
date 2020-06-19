@@ -11,7 +11,7 @@ http.createServer(function (req, res) {
 }).listen(8080)
 
 var LocalStorage = require('node-localstorage').LocalStorage,
-localStorage = new LocalStorage('/data');
+localStorage = new LocalStorage('./data');
 
 //var connection = mysql.createConnection({
 //  host     : process.env.CLEARDB_DATABASE_URL,
