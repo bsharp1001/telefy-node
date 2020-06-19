@@ -5,11 +5,11 @@ var LocalStorage = require('node-localstorage').LocalStorage,
 localStorage = new LocalStorage('./data');
 
 //var connection = mysql.createConnection({
-//  host     : process.env.DATABASE_URL
+//  host     : process.env.CLEARDB_DATABASE_URL
 //});
 var connection;
 function handleDisconnect() {
-  connection = mysql.createConnection(process.env.DATABASE_URL); // Recreate the connection, since
+  connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL); // Recreate the connection, since
                                                   // the old one cannot be reused.
 
   connection.connect(function(err) {              // The server is either down
