@@ -2,26 +2,23 @@ const { MTProto, getSRPParams } = require('@mtproto/core');
 const readline = require('readline');
 const mysql = require('mysql');
 var LocalStorage = require('node-localstorage').LocalStorage,
-localStorage = new LocalStorage('./data');
+  localStorage = new LocalStorage('./data');
 
-//var connection = mysql.createConnection({
-//  host     : process.env.CLEARDB_DATABASE_URL
-//});
 var connection;
 function handleDisconnect() {
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL); // Recreate the connection, since
-                                                  // the old one cannot be reused.
+  // the old one cannot be reused.
 
-  connection.connect(function(err) {              // The server is either down
-    if(err) {                                     // or restarting (takes a while sometimes).
+  connection.connect(function (err) {              // The server is either down
+    if (err) {                                     // or restarting (takes a while sometimes).
       //console.log('error when connecting to db:', err);
       setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
     }                                     // to avoid a hot loop, and to allow our node script to
   });                                     // process asynchronous requests in the meantime.
-                                          // If you're also serving http, display a 503 error.
-  connection.on('error', function(err) {
+  // If you're also serving http, display a 503 error.
+  connection.on('error', function (err) {
     //console.log('db error', err);
-    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
       handleDisconnect();                         // lost due to either server restart, or a
     } else {                                      // connnection idle timeout (the wait_timeout
       throw err;                                  // server variable configures this)
@@ -30,7 +27,6 @@ function handleDisconnect() {
 }
 
 handleDisconnect();
-//connection.connect();
 
 var values = [];
 
@@ -58,7 +54,6 @@ function prompt(question) {
   });
 }
 function sendCode(phone, options) {
-//console.log(`phone:`, phone);
 
   state.phone = phone;
 
@@ -74,7 +69,6 @@ function sendCode(phone, options) {
       options
     )
     .then(result => {
-//console.log(`result.phone_code_hash:`, result.phone_code_hash);
       state.phoneCodeHash = result.phone_code_hash;
       return result;
     });
@@ -82,7 +76,6 @@ function sendCode(phone, options) {
 
 function signIn(code, options) {
   state.code = code;
-//console.log(`code:`, code);
 
   return mtproto.call(
     'auth.signIn',
@@ -147,7 +140,7 @@ function handleUpdates() {
   // updateShortSentMessage
 
   mtproto.updates.on('updateShort', message => {
-//console.log(`message:`, message);
+    //console.log(`message:`, message);
   });
 }
 
@@ -170,233 +163,146 @@ connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), 
   connection.query('CREATE TABLE IF NOT EXISTS tele_keys (unique_key VARCHAR(255) PRIMARY KEY NOT NULL, value LONGTEXT)', function (error, results, fields) {
     console.log(error)
 
-rl.question("api id: ", (id) => {
-  rl.close()
-  values.push(["api_id",id]);
-  const rl1 = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  rl1.question("api hash: ", (hash) => {
-    rl1.close()
-    values.push(["api_hash",hash]);
-    const rl2 = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-    rl2.question("bot token: ", (token) => {
-      rl2.close()
-      values.push(["bot_token",token]);
-      const rl3 = readline.createInterface({
+    rl.question("api id: ", (id) => {
+      rl.close()
+      values.push(["api_id", id]);
+      const rl1 = readline.createInterface({
         input: process.stdin,
         output: process.stdout
       });
-      rl3.question("phone : ", (phonenum) => {
-        rl3.close()
-        mtproto = new MTProto({
-          api_id: id,
-          api_hash: hash,
-          test: false,
-          customLocalStorage: localStorage,
+      rl1.question("api hash: ", (hash) => {
+        rl1.close()
+        values.push(["api_hash", hash]);
+        const rl2 = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
         });
-        const phone = phonenum
-
-        getFullUser()
-        .then(result => {
-          //console.log(`result:`, result);
-          //console.log("ghfjgj:" + mtproto.customLocalStorage.length);
-
-          const rl6 = readline.createInterface({
+        rl2.question("bot token: ", (token) => {
+          rl2.close()
+          values.push(["bot_token", token]);
+          const rl3 = readline.createInterface({
             input: process.stdin,
             output: process.stdout
           });
-          rl6.question("channelid without @: ", (channel) => {
-            rl6.close()
-            mtproto.call("contacts.resolveUsername", {
-              username: channel
-            })
-            .then(result => {
-              values.push(["channel",result.peer.channel_id]);
-              //console.log(result.peer.channel_id);
-              for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
-                const key = mtproto.customLocalStorage.key(index);
-                var data =  [key, mtproto.customLocalStorage.getItem(key)];
-                //console.log(mtproto.customLocalStorage.length, data);
-                values.push(data);
-              }
-              //console.log(values);
-              for (let index = 0; index < values.length; index++) {
-              connection.query('INSERT INTO tele_keys (unique_key, value) VALUES ?', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
-                console.log(error);
-              })
-            }
-            })
-          })
-          //console.log(values);
-        })
-        .catch(error => {
-          console.log(`error:`, error);
-      
-          return sendCode(phone);
-        })
-        .catch(error => {
-          console.log(`sendCode[error]:`, error);
-      
-          if (error.error_message.includes('_MIGRATE_')) {
-            const [type, nextDcId] = error.error_message.split('_MIGRATE_');
-      
-            mtproto.setDefaultDc(+nextDcId);
-      
-            return sendCode(phone);
-          }
-        })
-        .then(async () => {
-          const code = await prompt('code: ');
-      
-          return signIn(code);
-        })
-        .catch(error => {
-          console.log(`signIn[error]:`, error);
-      
-          if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
-            return checkPassword(password);
-          }
-        })
-        .then(result => {
-//console.log(`signIn/checkPassword[result]:`, result);
-      
-          return getNearestDc({ dcId: 1 });
-        })
-        .then(result => {
-          const rl7 = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-          });
-          rl7.question("channelid without @: ", (channel) => {
-            rl7.close()
-            mtproto.call("contacts.resolveUsername", {
-              username: channel
-            })
-            .then(result => {
-              values.push(["channel",result.peer.channel_id]);
-              console.log(result.peer.channel_id);
-              //console.log(mtproto.customLocalStorage.length);
-              for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
-                const key = mtproto.customLocalStorage.key(index);
-                console.log(key);
-                var data =  [key, mtproto.customLocalStorage.getItem(key)];
-                values.push(data);
-              }
-              //console.log(values)
-              for (let index = 0; index < values.length; index++) {
-                connection.query('INSERT INTO tele_keys (unique_key, value) VALUES (?,?)', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
-                  console.log(error);
+          rl3.question("phone : ", (phonenum) => {
+            rl3.close()
+            mtproto = new MTProto({
+              api_id: id,
+              api_hash: hash,
+              test: false,
+              customLocalStorage: localStorage,
+            });
+            const phone = phonenum
+
+            getFullUser()
+              .then(result => {
+
+                const rl6 = readline.createInterface({
+                  input: process.stdin,
+                  output: process.stdout
+                });
+                rl6.question("channelids without @ seperated by comma\",\": ", async (channels) => {
+                  rl6.close()
+                  var channelist = channels.split(",");
+                  var cp = []
+                  console.log(channelist);
+                  for (let index = 0; index < channelist.length; index++) {
+                    const channel = channelist[index];
+                    var x = await mtproto.call("contacts.resolveUsername", {
+                      username: channel
+                    });
+                    console.log(x.peer.channel_id, channel);
+                    cp.push(x.peer.channel_id);
+                  }
+                  console.log("done")
+                  values.push(["channel", cp.join(",")]);
+                  for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
+                    const key = mtproto.customLocalStorage.key(index);
+                    var data = [key, mtproto.customLocalStorage.getItem(key)];
+                    values.push(data);
+                  }
+                  for (let index = 0; index < values.length; index++) {
+                    connection.query('INSERT INTO tele_keys (unique_key, value) VALUES ?', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
+                      console.log(error.error_message);
+                    })
+                  }
                 })
-              }
-            })
-          })
-//console.log(`getNearestDc[result]:`, result);
-          //console.log(mtproto.customLocalStorage.length);
-        })
-        .catch(error => {
-          console.log(`error:`, error);
-        });
+              })
+              .catch(error => {
+                console.log(`error:`, error);
 
-        /*
-        sendCode(phone)
-        .catch(error => {
-          if (error.error_message.includes('_MIGRATE_')) {
-            const [type, nextDcId] = error.error_message.split('_MIGRATE_');
-          
-            mtproto.setDefaultDc(+nextDcId);
-          
-            return sendCode(phone, mtproto);
-          }
-        })
-        .then(result => {
-          const rl4 = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-          });
-          rl4.question("code: ", (answer) => {
-            rl4.close()
-            return mtproto.call('auth.signIn', {
-              phone_code: answer,
-              phone_number: phone,
-              phone_code_hash: result.phone_code_hash,
-            })
-            .then(result => {
-              //console.log('auth.authorization:', result);
-              return mtproto.call("contacts.resolveUsername", {
-                username: "ddesd1001"
+                return sendCode(phone);
+              })
+              .catch(error => {
+                console.log(`sendCode[error]:`, error);
+
+                if (error.error_message.includes('_MIGRATE_')) {
+                  const [type, nextDcId] = error.error_message.split('_MIGRATE_');
+
+                  mtproto.setDefaultDc(+nextDcId);
+
+                  return sendCode(phone);
+                }
+              })
+              .then(async () => {
+                const code = await prompt('code: ');
+
+                return signIn(code);
+              })
+              .catch(error => {
+                console.log(`signIn[error]:`, error);
+
+                if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
+                  return checkPassword(password);
+                }
               })
               .then(result => {
-//console.log(result.peer.channel_id);
-                var values = [];
-//console.log(localstorage.length);
-                for (let index = 0; index < localstorage.length; index++) {
-                  
-                  const key = localstorage.key[index];
-                  var data =  [key, localstorage.getItem(key)];
-//console.log(localstorage.length, data);
-                  values.push(data);
-                }
-//console.log(values);
-                process.exit();
-              })
-              .catch( error =>{
-//console.log(error.error_message);
-                process.exit();
-              })
-              ;
-            })
-          })
 
-        })
-        .catch(error => {
-          if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
-            return mtproto.call('account.getPassword').then(async result => {
-              const { srp_id, current_algo, srp_B } = result;
-              const { salt1, salt2, g, p } = current_algo;
-              const rl5 = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-              });
-              rl5.question("password: ", async (answer) => {
-                rl5.close()
-                const { A, M1 } = await getSRPParams({
-                  g,
-                  p,
-                  salt1,
-                  salt2,
-                  gB: srp_B,
-                  answer,
+                return getNearestDc({ dcId: 1 });
+              })
+              .then(result => {
+                const rl7 = readline.createInterface({
+                  input: process.stdin,
+                  output: process.stdout
                 });
-              
-                return mtproto.call('auth.checkPassword', {
-                  password: {
-                    _: 'inputCheckPasswordSRP',
-                    srp_id,
-                    A,
-                    M1,
-                  },
+                rl7.question("channelid without @: ", async (channels) => {
+                  rl7.close()
+                  var channelist = channels.split(",");
+                  var cp = []
+                  console.log(channelist);
+                  for (let index = 0; index < channelist.length; index++) {
+                    const channel = channelist[index];
+                    var x = await mtproto.call("contacts.resolveUsername", {
+                      username: channel
+                    });
+                    console.log(x.peer.channel_id, channel);
+                    cp.push(x.peer.channel_id);
+                  }
+                  console.log("done")
+                  values.push(["channel", cp.join(",")]);
+                  for (let index = 0; index < mtproto.customLocalStorage.length; index++) {
+                    const key = mtproto.customLocalStorage.key(index);
+                    console.log(key);
+                    var data = [key, mtproto.customLocalStorage.getItem(key)];
+                    values.push(data);
+                  }
+                  for (let index = 0; index < values.length; index++) {
+                    connection.query('INSERT INTO tele_keys (unique_key, value) VALUES (?,?)', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
+                      console.log(error.error_message);
+                    })
+                  }
                 })
-                .then(result => {
-//console.log('auth.authorization:', result);
-                });
+              })
+              .catch(error => {
+                console.log(`error:`, error);
               });
-            });
-          }
-        })*/
+          });
+        });
       });
     });
+
   });
-});
 
 });
-  
-});
-//connection.query('SELECT email, name FROM users WHERE chatid=?', [username, chatId, chatId], function (error, results, fields) {})
 
 
-  
