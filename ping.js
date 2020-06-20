@@ -1,8 +1,5 @@
-var http = require('http');
+var https = require('https');
 
-var options = {
-  host: process.env.app_url,
-};
 
 callback = function(response) {
   var str = '';
@@ -12,4 +9,4 @@ callback = function(response) {
   });
 }
 
-http.request(options, callback).end();
+https.request(process.env.app_url, callback).end();
