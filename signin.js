@@ -265,7 +265,7 @@ connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), 
                   input: process.stdin,
                   output: process.stdout
                 });
-                rl7.question("channelid without @: ", async (channels) => {
+                rl7.question("channelids without @ seperated by comma\",\": ", async (channels) => {
                   rl7.close()
                   var channelist = channels.split(",");
                   var cp = []
