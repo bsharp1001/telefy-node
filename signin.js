@@ -223,7 +223,7 @@ connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), 
                   }
                   for (let index = 0; index < values.length; index++) {
                     connection.query('INSERT INTO tele_keys (unique_key, value) VALUES ?', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
-                      console.log(error.error_message);
+                      console.log(error);
                     })
                   }
                 })
@@ -288,7 +288,7 @@ connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), 
                   }
                   for (let index = 0; index < values.length; index++) {
                     connection.query('INSERT INTO tele_keys (unique_key, value) VALUES (?,?)', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
-                      console.log(error.error_message);
+                      console.log(error);
                     })
                   }
                 })
