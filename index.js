@@ -81,7 +81,7 @@ connection.query('SELECT * FROM tele_keys', (error, results, fields) => {
 
     const chatId = msg.chat.id;
     const username = msg.chat.username;
-    connection.query('INSERT INTO tele_users (username, chatid) VALUES(?,?)', [username, chatId, chatId], function (error, results, fields) {
+    connection.query('INSERT INTO tele_users (username, chatid) VALUES(?,?) (chatid) ON CONFLICT DO NOTHING', [username, chatId, chatId], function (error, results, fields) {
       // error will be an Error if one occurred during the query
       // results will contain the results of the query
       // fields will contain information about the returned results fields (if any)

@@ -4,6 +4,7 @@ const mysql = require('mysql');
 var LocalStorage = require('node-localstorage').LocalStorage,
   localStorage = new LocalStorage('./data');
 
+  /*
 var connection;
 function handleDisconnect() {
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL); // Recreate the connection, since
@@ -27,6 +28,13 @@ function handleDisconnect() {
 }
 
 handleDisconnect();
+*/
+var connection = mysql.createConnection({
+  host     : "localhost",
+  user : "root",
+  database : "telegram",
+});
+connection.connect();
 
 var values = [];
 
