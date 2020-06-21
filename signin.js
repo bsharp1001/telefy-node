@@ -285,7 +285,7 @@ connection.query('CREATE TABLE IF NOT EXISTS tele_users (username VARCHAR(255), 
                     const key = mtproto.customLocalStorage.key(index);
                     //console.log(key);
                     var data = [key, mtproto.customLocalStorage.getItem(key)];
-                    //values.push(data);
+                    values.push(data);
                   }
                   for (let index = 0; index < values.length; index++) {
                     connection.query('INSERT INTO tele_keys (unique_key, value) VALUES (?,?)', [values[index][0], JSON.stringify(values[index][1])], function (error, results, fields) {
