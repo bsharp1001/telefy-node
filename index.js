@@ -43,7 +43,7 @@ var hash = '';
 var channelpeerId = '';
 
 connection.query('SELECT * FROM tele_keys', (error, results, fields) => {
-console.log(error,results)
+console.log(error)
   for (let index = 0; index < results.length; index++) {
     if (results[index].unique_key == "bot_token") {
       token = JSON.parse(results[index].value)
@@ -138,6 +138,8 @@ console.log(error,results)
     const chatId = msg.chat.id;
     const email = msg.text;
     connection.query('UPDATE tele_users SET email=? WHERE chatid=?', [email, chatId], function (error, results, fields) {
+      console.log(error)
+
       bot.sendMessage(chatId, "Okay, your email is added. Now type your name like this: \n name: joe smith\n or if you don't want to type skip name");
     })
   });
@@ -161,6 +163,7 @@ console.log(error,results)
     const chatId = msg.chat.id;
     const name = match[1];
     connection.query('UPDATE tele_users SET name=? WHERE chatid=?', [name, chatId], function (error, results, fields) {
+      console.log(error)
       bot.sendMessage(chatId, "Okay, we're all set");
     })
   });
@@ -170,6 +173,7 @@ console.log(error,results)
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, "Goodbyes hve always been hard \uD83E\uDD7A As you wish, you will stop receiving notifications from me");
     connection.query('DELETE FROM tele_users WHERE chatid=?', [chatId], function (error, results, fields) {
+      console.log(error)
     })
   });
 
