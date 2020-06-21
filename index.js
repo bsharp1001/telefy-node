@@ -66,7 +66,7 @@ console.log(error)
     }
   }
   // Create a bot that uses 'polling' to fetch new updates
-  const bot = new TelegramBot(true, { polling: true });
+  const bot = new TelegramBot(token, { polling: true });
   console.log(channelpeerId)
   // Create mtproto instance
   const mtproto = new MTProto({
