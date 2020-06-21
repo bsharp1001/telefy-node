@@ -15,7 +15,7 @@ var LocalStorage = require('node-localstorage').LocalStorage,
 
 var connection;
 function handleDisconnect() {
-  connection = mysql.createPool(process.env.CLEARDB_DATABASE_URL || "mysql://b7284f6545b401:264e3d13@us-cdbr-east-05.cleardb.net/heroku_365f8d6bc488a33?reconnect=true"); // Recreate the connection, since
+  connection = mysql.createPool(process.env.CLEARDB_DATABASE_URL); // Recreate the connection, since
   // the old one cannot be reused.
 
   //connection.connect(function (err) {              // The server is either down
